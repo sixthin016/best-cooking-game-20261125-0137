@@ -44,8 +44,13 @@ export const SCORE = {
   comboMax: 3,
 };
 
-/** Layout: every station's rectangle on the 1280x800 floor. Counters line the walls;
- * the chef walks the open middle (y 320..560 corridor plus the gaps between them). */
+/** Freshness: a prepared ingredient stays FRESH for this many seconds after it
+ * is chopped or grilled. Serve a dish built only from fresh items and it pays
+ * a FRESH BONUS on top of the tip; serve with a stale item in it and the tip
+ * is gone. Freshness is the game's one twist: prepping ahead is fast, but
+ * only just-in-time cooking pays full price. */
+export const FRESH_SECONDS = 25;
+export const FRESH_BONUS = 3;
 export const LAYOUT = {
   topBar: { x: 0, y: 0, w: 1280, h: 58 },
   orderBoard: { x: 16, y: 66, w: 1248, h: 118 },
@@ -88,24 +93,35 @@ export const BOARD_SLOTS = [
 ];
 
 export const PALETTE = {
-  wall: '#3d2b1f',
-  floor: '#c89b6a',
-  floorDark: '#b98a5a',
-  floorTile: '#d4a976',
-  topBar: '#2b1d12',
-  board: '#241812',
-  boardEdge: '#4a3220',
-  counter: '#8a5a33',
+  wall: '#2e1d12',
+  wallTile: '#4a2f1d',
+  wallTileLight: '#5d3d24',
+  floor: '#c08a54',
+  floorDark: '#a9763f',
+  floorTile: '#d9ab72',
+  floorTileDark: '#b57e46',
+  floorLine: '#8f6234',
+  rug: '#a33327',
+  rugEdge: '#e8b64c',
+  rugInner: '#c65a3c',
+  topBar: '#241610',
+  board: '#1d120b',
+  boardEdge: '#5d3d24',
+  counter: '#7d4f27',
   counterTop: '#a9743f',
-  steel: '#b9c0c7',
+  counterEdge: '#e8b64c',
+  steel: '#c7ccd2',
   steelDark: '#7d838a',
-  grill: '#3a3f45',
+  grill: '#33373d',
   grillHot: '#e2574b',
-  window: '#5b3a24',
+  window: '#4a2a16',
+  windowWarm: '#f2a93c',
   text: '#fff6e8',
   muted: '#d8c3a5',
   gold: '#f2c94c',
   green: '#7bc96f',
+  freshGreen: '#8ee06a',
+  staleBrown: '#8a6a42',
   red: '#e5534b',
   ticket: '#fff3d6',
   ticketDone: '#cfe8b8',

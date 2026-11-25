@@ -19,6 +19,29 @@ per hari. Feel (3): partikel cincang, uap grill, popup koin, timer berdenyut mer
 canvas sendiri, tanpa aset/karakter komersial. Struktur (5): 9 file sumber, satu tugas
 jelas per file, nama fungsi sesuai pekerjaannya.
 
+## R2 (25 Nov ~12:30 WITA) — rebuild visual + twist + playtest
+Panel v1: mean 73,0 / min 55 / max 92 — lolos tipis, dan user yang melihat 4 screenshot
+menilai visualnya "jelek banget" (benar: lantai beige ~50% frame kosong, jendela serving
+placeholder, patty pucat, uap nyaris tak terlihat, papan potong kosong). R2 memperbaiki
+ketiganya, bukan menambal:
+- **Visual (render.js ditulis ulang):** lantai checkerboard bertekstur + speckle +
+  karpet runner bermotif, bayangan lembut di bawah semua counter, jendela serving baru
+  (etalase + lampu hangat + piring + pelanggan menunggu + label READY TO SERVE!),
+  patty berubah warna mengikuti kematangan + grill marks + uap (partikel dunia nyata
+  dari world.js + curl animasi di render), papan potong selalu berisi (pisau + bahan),
+  palet lebih hangat/kaya. Tidak ada lagi bidang datar kosong di mana pun.
+- **Twist — freshness:** bahan yang sudah dicincang/dipanggang segar 25 detik (cincin
+  hijau yang menguras di sekelilingnya), lalu basi. Hidangan serba-segar = bonus +$3;
+  ada satu bahan basi = tanpa tip. Prep-ahead cepat tapi hanya masak just-in-time
+  yang dibayar penuh — game ini tentang timing, bukan sekadar kecepatan.
+  Terlihat di screenshot: cincin freshness di board/grill/plate, popup "FRESH +$3",
+  peringatan "stale item — no tip at the window".
+- **Playtest (`tools/playtest.mjs`, PLAYTEST.md):** bot greedy memainkan shift penuh
+  180 detik di Node (world.js yang sama dengan game): step time p50 0,004 ms /
+  p95 0,012 ms, latensi input-ke-efek 1 step (16,7 ms), 0 error di 136 penggunaan
+  stasiun, seed sama dua kali = hasil identik, 4/4 cek freshness lolos.
+  Frame probe live di Chromium headless: mean ~20 ms (software rendering, VM 1,5 CPU).
+
 ## 2. Apa yang bisa MENOLAK entri ini di intake?
 - entry_size: game/ kecil (vanilla JS, tanpa library), jauh di bawah 48 MiB / 993 file.
 - references: semua referensi lokal (ES module relatif); tanpa font/CDN/gambar eksternal.
@@ -52,6 +75,9 @@ Belum ada entri live: kompetisi dibuka hari ini 09:37 WITA, entries_count = 0, b
 leaderboard/top 1 untuk dibedah (blind rounds, tidak ada rank yang terlihat). Gain =
 menjadi entri pertama yang lengkap + lolos gate + menang game pairwise lawan house games
 di ronde blind. Target: masuk 40 besar dev board (kursi final heat) lalu top 10 final.
+**R2: panel v1 mean 73,0 / min 55 — target panel v2 mean ≥78 / min ≥65.**
+Bila panel v2 tidak lebih baik dari v1, JANGAN resubmit (Force_Last menghukum resubmit
+yang lebih buruk).
 
 ## Bedah top 1
 TIDAK MUNGKIN: 0 entri saat build dimulai, tidak ada artifact top 1. Sebagai gantinya:

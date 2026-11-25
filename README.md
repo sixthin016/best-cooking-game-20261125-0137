@@ -26,6 +26,12 @@ node serve.ts
 - A ticket that runs out is a miss: −$5 and the combo resets. The last 60
   seconds of the 3-minute shift are **RUSH HOUR** — tickets come faster and
   patience runs shorter. Survive the shift, then Day 2 comes faster still.
+- **Freshness (the twist):** a chopped or grilled ingredient stays fresh for
+  25 seconds — a green ring drains around it as the seconds run out, then it
+  goes stale. Serve a dish built only from fresh items for a **+$3 FRESH
+  bonus**; serve with a stale item in it and the tip is gone. Prepping ahead
+  is fast, but only just-in-time cooking pays full price — so the game is
+  about timing, not just speed.
 
 ## The menu (6 recipes)
 
@@ -43,6 +49,15 @@ Breakfast Stack · Veggie Melt — $8–$13 each, plus tips up to $6.
   `input.js` (keyboard + mouse), `shots.js` (screenshot staging),
   `main.js` (boot + game loop).
 - `screenshots/` — 4 real renders of the game (`?shot=cover|rush|chop|serve`).
+- `tools/playtest.mjs` — headless playtest: a greedy bot plays full 180 s
+  shifts in Node and records step time, input latency, served/missed and
+  freshness behaviour; results in `PLAYTEST.md` + `playtest.json`. Latest:
+  step time p50 0.004 ms / p95 0.012 ms, input-to-effect latency 1 step
+  (16.7 ms), 0 station errors in 136 uses, same seed twice gives identical
+  results, all 4 freshness checks pass. A live frame probe in headless
+  Chromium (software rendering, 1.5-CPU VM) measured a mean frame of ~20 ms.
+- `tools/take-shots.py` — regenerates the 4 screenshots in headless Chromium
+  and runs the frame probe.
 - `vendor/makefun-game.ts` — the kit's dossier library, unchanged.
 
 No libraries, no network requests, no image or audio files: every pixel is

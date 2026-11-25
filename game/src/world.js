@@ -10,6 +10,8 @@ import {
   BOARD_SLOTS,
   CHEF,
   COOK,
+  FRESH_BONUS,
+  FRESH_SECONDS,
   GRILL_SLOTS,
   LAYOUT,
   ORDERS,
@@ -80,6 +82,8 @@ export function createWorld(random) {
     grill: GRILL_SLOTS.map(() => ({ item: null })),
     board: BOARD_SLOTS.map(() => ({ item: null })),
     plate: [],
+    /** Freshness (seconds left) of each item on the plate, same order as plate. */
+    plateFresh: [],
     particles: [],
     popups: [],
     flashes: [],
@@ -206,11 +210,13 @@ export function createWorld(random) {
           burst(station.x, station.y - 10, '#cfe8b8', 10, 130);
           if (slot.item.hits >= COOK.chopHits) {
             slot.item.state = 'chopped';
+            // Freshness starts the moment the chopping is done.
+            slot.item.fresh = FRESH_SECONDS;
             return EVENT_CHOP | EVENT_COOKED;
           }
           return EVENT_CHOP;
         }
-        chef.carrying = { id: slot.item.id, state: 'chopped', hits: 0 };
+        chef.carrying = { id: slot.item.id, state: 'chopped', hits: 0, fresh: slot.item.fresh };
         slot.item = null;
         return EVENT_PICKUP;
       }
@@ -230,6 +236,7 @@ export function createWorld(random) {
           id: slot.item.id,
           state: slot.item.burnt ? 'burnt' : 'cooked',
           hits: 0,
+          fresh: slot.item.fresh,
         };
         slot.item = null;
         return EVENT_PICKUP;
@@ -246,6 +253,8 @@ export function createWorld(random) {
         const fits = state.orders.some((o) => plateFitsRecipe([...state.plate, key], o.recipe));
         if (!fits && state.plate.length > 0) return EVENT_ERROR;
         state.plate.push(key);
+        // Freshness carries onto the plate: the clock keeps running there.
+        state.plateFresh.push(typeof item.fresh === 'number' ? item.fresh : Infinity);
         chef.carrying = null;
         burst(station.x, station.y, '#f2c94c', 8, 80);
         return EVENT_PLACE;
@@ -255,18 +264,26 @@ export function createWorld(random) {
     if (station.kind === 'window') {
       const match = state.orders.find((o) => plateMatchesRecipe(state.plate, o.recipe));
       if (!match) return EVENT_ERROR;
-      const tip = Math.round(SCORE.maxTip * (match.remaining / match.patience));
+      // Freshness decides the payout: an all-fresh dish earns a bonus, a dish
+      // with any stale item in it earns no tip at all.
+      const allFresh = state.plate.length > 0 && state.plateFresh.every((f) => f > 0);
+      const anyStale = state.plateFresh.some((f) => f <= 0);
+      const tip = anyStale ? 0 : Math.round(SCORE.maxTip * (match.remaining / match.patience));
+      const freshBonus = allFresh ? FRESH_BONUS : 0;
       const mult = 1 + Math.min(SCORE.comboMax - 1, state.combo * SCORE.comboStep);
-      const earned = Math.round((match.recipe.coins + tip) * mult);
+      const earned = Math.round((match.recipe.coins + tip + freshBonus) * mult);
       state.coins += earned;
       state.served += 1;
       state.combo += 1;
       state.bestCombo = Math.max(state.bestCombo, state.combo);
       state.orders = state.orders.filter((o) => o !== match);
       state.plate = [];
+      state.plateFresh = [];
       // Popups rise over the open floor left of the window, clear of its header.
       addPopup(station.x - 280, station.y - 80, `+$${earned}`, '#f2c94c');
-      if (state.combo >= 2) addPopup(station.x - 280, station.y - 112, `COMBO x${mult.toFixed(2)}`, '#7bc96f');
+      if (allFresh) addPopup(station.x - 280, station.y - 112, `FRESH +$${FRESH_BONUS}`, '#8ee06a');
+      if (anyStale) addPopup(station.x - 280, station.y - 112, 'STALE — no tip', '#e5534b');
+      if (state.combo >= 2) addPopup(station.x - 280, station.y - 144, `COMBO x${mult.toFixed(2)}`, '#7bc96f');
       burst(station.x, station.y, '#f2c94c', 16, 160);
       return EVENT_SERVED;
     }
@@ -277,6 +294,7 @@ export function createWorld(random) {
       }
       if (state.plate.length > 0) {
         state.plate.pop();
+        state.plateFresh.pop();
         return EVENT_TRASH;
       }
       return EVENT_ERROR;
@@ -319,7 +337,8 @@ export function createWorld(random) {
       }
     }
 
-    // The grill cooks; food left too long burns.
+    // The grill cooks; food left too long burns. Freshness ticks down on every
+    // prepared item: board, grill, the chef's hands and the plate.
     let sizzling = false;
     for (const slot of state.grill) {
       const item = slot.item;
@@ -329,7 +348,12 @@ export function createWorld(random) {
       const cookTime = item.id === 'egg' ? COOK.egg : COOK.patty;
       if (!item.done && item.progress >= cookTime) {
         item.done = true;
+        // Freshness starts the moment the grill finishes.
+        item.fresh = FRESH_SECONDS;
         events |= EVENT_COOKED;
+      }
+      if (item.done && !item.burnt) {
+        item.fresh = Math.max(0, (item.fresh ?? FRESH_SECONDS) - dt);
       }
       if (item.done && !item.burnt && item.progress >= cookTime + COOK.burnAfter) {
         item.burnt = true;
@@ -338,6 +362,41 @@ export function createWorld(random) {
       }
     }
     state.sizzle = sizzling ? state.sizzle + dt : 0;
+
+    // Steam rises off any slot that is cooking: a fresh particle every step
+    // or two, so a live grill always has visible steam above it.
+    state.steamIn = (state.steamIn ?? 0) + dt;
+    if (sizzling && state.steamIn > 0.12) {
+      state.steamIn = 0;
+      const cooking = state.grill.map((s, i) => (s.item && !s.item.burnt ? i : -1)).filter((i) => i >= 0);
+      if (cooking.length > 0) {
+        const slot = GRILL_SLOTS[cooking[Math.floor(random() * cooking.length)]];
+        state.particles.push({
+          x: slot.x + 20 + random() * (slot.w - 40),
+          y: slot.y + 14,
+          vx: (random() - 0.5) * 12,
+          vy: -46 - random() * 22,
+          colour: '#ffffff',
+          size: 7 + random() * 7,
+          ttl: 1.1 + random() * 0.5,
+          age: 0,
+          steam: true,
+        });
+      }
+    }
+
+    // Freshness decay on the board (chopped only), in the chef's hands, on the plate.
+    for (const slot of state.board) {
+      if (slot.item && slot.item.state === 'chopped') {
+        slot.item.fresh = Math.max(0, (slot.item.fresh ?? FRESH_SECONDS) - dt);
+      }
+    }
+    if (state.chef.carrying && typeof state.chef.carrying.fresh === 'number') {
+      state.chef.carrying.fresh = Math.max(0, state.chef.carrying.fresh - dt);
+    }
+    for (let i = 0; i < state.plateFresh.length; i += 1) {
+      state.plateFresh[i] = Math.max(0, state.plateFresh[i] - dt);
+    }
 
     // The chef moves: keys first, then a mouse click target. A caller may also
     // steer with an exact vector (input.mx/my, already normalised): boolean keys
@@ -391,12 +450,16 @@ export function createWorld(random) {
     state.near = nearestStation();
     if (input.interact) events |= interact(state.near);
 
-    // Particles and popups age out.
+    // Particles and popups age out. Steam rises instead of falling.
     for (const p of state.particles) {
       p.age += dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      p.vy += 260 * dt;
+      if (p.steam) {
+        p.vx += Math.sin((p.age * 6 + p.x * 0.05)) * 8 * dt;
+      } else {
+        p.vy += 260 * dt;
+      }
     }
     state.particles = state.particles.filter((p) => p.age < p.ttl);
     for (const p of state.popups) p.age += dt;
@@ -416,6 +479,9 @@ export function createWorld(random) {
     state.grill = GRILL_SLOTS.map(() => ({ item: null }));
     state.board = BOARD_SLOTS.map(() => ({ item: null }));
     state.plate = [];
+    state.plateFresh = [];
+    state.particles = [];
+    state.popups = [];
     state.chef.carrying = null;
     state.chef.x = 640;
     state.chef.y = 440;

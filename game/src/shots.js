@@ -132,6 +132,37 @@ function cookFirstTicket(world) {
   }
 }
 
+/** Put a patty on a free grill slot and let it cook briefly, so the grill reads
+ * alive (steam, ember glow, progress bar) in scenes that would otherwise leave
+ * it empty. Uses only real rules. */
+function startPattyOnGrill(world) {
+  const free = world.state.grill.findIndex((s) => !s.item);
+  if (free < 0 || world.state.chef.carrying) return;
+  errand(world, binRect('patty'), 900, 'right');
+  useAt(world, 'bin', 'patty', binRect('patty'));
+  if (!world.state.chef.carrying) return;
+  errand(world, GRILL_SLOTS[free], 600);
+  useAt(world, 'grill', free, GRILL_SLOTS[free]);
+  idle(world, 2);
+}
+
+/** Leave one fully-chopped tomato on a free board slot: the board must read as
+ * in use in every scene, not an empty beige slab. Uses only real rules. */
+function leaveChoppedOnBoard(world) {
+  const free = world.state.board.findIndex((s) => !s.item);
+  if (free < 0 || world.state.chef.carrying) return;
+  errand(world, binRect('tomato'), 900, 'right');
+  useAt(world, 'bin', 'tomato', binRect('tomato'));
+  if (!world.state.chef.carrying) return;
+  errand(world, BOARD_SLOTS[free], 600);
+  useAt(world, 'board', free, BOARD_SLOTS[free]);
+  for (let hit = 0; hit < 4; hit += 1) {
+    useAt(world, 'board', free, BOARD_SLOTS[free]);
+    world.step(SAMPLE, { left: false, right: false, up: false, down: false, interact: false, click: null });
+    if (world.state.board[free].item && world.state.board[free].item.state === 'chopped') return;
+  }
+}
+
 /** Let the world idle so tickets spawn and the grill steams. */
 function idle(world, seconds) {
   const steps = Math.floor(seconds / SAMPLE);
@@ -150,6 +181,8 @@ export function stageShot(name, world) {
   const state = world.state;
   if (name === 'chop') {
     idle(world, 8);
+    // A patty on the grill first, so the grill is alive in the frame too.
+    startPattyOnGrill(world);
     const order = state.orders[0];
     if (order) {
       const chopNeed = order.recipe.needs.find((n) => INGREDIENTS[n.split(':')[0]].prep === 'chop');
@@ -184,18 +217,11 @@ export function stageShot(name, world) {
     serveDish();
     idle(world, 4);
     cookFirstTicket(world);
-    // Start the next dish's patty so the grill is alive in the frame, then
-    // serve as the very last action: the "+$…" popup must still be fresh.
-    const freeGrill = state.grill.findIndex((s) => !s.item);
-    if (freeGrill >= 0) {
-      errand(world, binRect('patty'), 900, 'right');
-      useAt(world, 'bin', 'patty', binRect('patty'));
-      if (state.chef.carrying) {
-        errand(world, GRILL_SLOTS[freeGrill], 600);
-        useAt(world, 'grill', freeGrill, GRILL_SLOTS[freeGrill]);
-        idle(world, 2);
-      }
-    }
+    // Start the next dish's patty so the grill is alive in the frame.
+    startPattyOnGrill(world);
+    // The board keeps a chopped tomato, then serve as the very last action:
+    // the "+$…" popup must still be fresh when the frame is taken.
+    leaveChoppedOnBoard(world);
     serveDish();
     return { screen: SCREEN_PLAY };
   }
@@ -211,6 +237,8 @@ export function stageShot(name, world) {
     state.combo = 3;
     state.served = 7;
     state.missed = 0;
+    startPattyOnGrill(world);
+    leaveChoppedOnBoard(world);
     return { screen: SCREEN_PLAY };
   }
 
@@ -244,5 +272,6 @@ export function stageShot(name, world) {
   state.coins = 47;
   state.combo = 2;
   state.served = 4;
+  leaveChoppedOnBoard(world);
   return { screen: SCREEN_PLAY };
 }

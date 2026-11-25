@@ -1,0 +1,75 @@
+{
+  "generated": "2026-11-25T04:29:50.449Z",
+  "shifts": [
+    {
+      "seed": 11,
+      "steps": 6036,
+      "elapsed": 180.00000000003539,
+      "coins": 37,
+      "served": 3,
+      "missed": 3,
+      "combo": 2,
+      "interacts": 68,
+      "errors": 0,
+      "serves": 3,
+      "freshServes": 2,
+      "staleServes": 0,
+      "stepMs": {
+        "p50": 0.0042,
+        "p95": 0.0124,
+        "max": 3.7529
+      }
+    },
+    {
+      "seed": 42,
+      "steps": 5856,
+      "elapsed": 180.00000000003539,
+      "coins": 34,
+      "served": 3,
+      "missed": 3,
+      "combo": 2,
+      "interacts": 68,
+      "errors": 0,
+      "serves": 3,
+      "freshServes": 2,
+      "staleServes": 0,
+      "stepMs": {
+        "p50": 0.0026,
+        "p95": 0.0069,
+        "max": 6.4349
+      }
+    }
+  ],
+  "freshness": [
+    {
+      "check": "chopped item gets fresh=25s",
+      "pass": true
+    },
+    {
+      "check": "freshness decays to 0 after 27s idle",
+      "pass": true
+    },
+    {
+      "check": "stale serve pays base coins only (8, no tip, no bonus)",
+      "pass": true
+    },
+    {
+      "check": "all-fresh serve pays 8 + 6 tip + 3 bonus = 17",
+      "pass": true
+    }
+  ],
+  "determinism": {
+    "seed": 11,
+    "first": {
+      "coins": 37,
+      "served": 3,
+      "missed": 3
+    },
+    "second": {
+      "coins": 37,
+      "served": 3,
+      "missed": 3
+    },
+    "identical": true
+  }
+}
