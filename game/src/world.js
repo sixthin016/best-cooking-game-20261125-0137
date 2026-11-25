@@ -118,7 +118,9 @@ export function createWorld(random) {
 
   function spawnOrder() {
     if (state.orders.length >= ORDERS.maxActive) return;
-    const patience = state.rush ? ORDERS.patienceRush : ORDERS.patience;
+    // Day progression: later days give every ticket less patience.
+    const dayCut = Math.min(30, (state.day - 1) * ORDERS.patiencePerDay);
+    const patience = Math.max(45, (state.rush ? ORDERS.patienceRush : ORDERS.patience) - dayCut);
     const order = {
       id: state.nextOrderId,
       recipe: drawOrder(random, state.elapsed, state.day).recipe,
@@ -321,7 +323,10 @@ export function createWorld(random) {
     state.spawnIn -= dt;
     if (state.spawnIn <= 0) {
       spawnOrder();
-      state.spawnIn = state.rush ? ORDERS.spawnEveryRush : ORDERS.spawnEvery;
+      // Day progression: later days spawn tickets sooner.
+      const base = state.rush ? ORDERS.spawnEveryRush : ORDERS.spawnEvery;
+      const floor = state.rush ? 6 : 10;
+      state.spawnIn = Math.max(floor, base - (state.day - 1) * ORDERS.spawnEveryPerDay);
     }
 
     // Ticket patience ticks down; an expired ticket is a miss.
@@ -468,7 +473,7 @@ export function createWorld(random) {
     return events;
   }
 
-  /** Reset for a new day: faster tickets, same kitchen. */
+  /** Reset for a new day: faster tickets, less patience, same kitchen. */
   function nextDay() {
     state.day += 1;
     state.elapsed = 0;

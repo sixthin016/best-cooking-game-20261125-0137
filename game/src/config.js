@@ -26,6 +26,11 @@ export const ORDERS = {
   spawnEveryRush: 9,
   /** Coins lost when a ticket expires unserved. */
   missPenalty: 5,
+  /** Day progression: each new day cuts patience by this many seconds
+   * (floor 45) and spawns tickets this many seconds sooner (floor 10 s,
+   * 6 s in rush). Day 1 is the gentle shift; Day 3 already bites. */
+  patiencePerDay: 5,
+  spawnEveryPerDay: 1,
 };
 
 /** Grill / fry timing, in seconds. */

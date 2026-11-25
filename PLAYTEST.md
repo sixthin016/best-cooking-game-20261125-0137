@@ -1,6 +1,6 @@
 # Ember Kitchen — playtest
 
-Generated 2026-11-25T04:29:50.449Z by `node tools/playtest.mjs` (headless Node, same world.js the game ships).
+Generated 2026-11-25T04:37:23.358Z by `node tools/playtest.mjs` (headless Node, same world.js the game ships).
 
 ## Full-shift bot play (greedy policy: serve the first ticket, one ingredient at a time)
 
@@ -13,8 +13,8 @@ Generated 2026-11-25T04:29:50.449Z by `node tools/playtest.mjs` (headless Node, 
 
 | seed | p50 | p95 | max |
 | --- | --- | --- | --- |
-| 11 | 0.0042 ms | 0.0124 ms | 3.7529 ms |
-| 42 | 0.0026 ms | 0.0069 ms | 6.4349 ms |
+| 11 | 0.0044 ms | 0.0124 ms | 0.945 ms |
+| 42 | 0.0033 ms | 0.0118 ms | 2.0643 ms |
 
 A 60 FPS frame has a 16.7 ms budget; p95 step time is ~100x inside it, so the
 simulation cannot be the frame-rate bottleneck on any modern machine.

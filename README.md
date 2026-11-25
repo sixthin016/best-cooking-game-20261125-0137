@@ -25,7 +25,9 @@ node serve.ts
   serves pay tips; serving in a row builds a combo multiplier (up to x3).
 - A ticket that runs out is a miss: −$5 and the combo resets. The last 60
   seconds of the 3-minute shift are **RUSH HOUR** — tickets come faster and
-  patience runs shorter. Survive the shift, then Day 2 comes faster still.
+  patience runs shorter. Survive the shift, then Day 2 comes faster still:
+  every new day cuts ticket patience by 5 s (floor 45 s) and spawns tickets
+  1 s sooner, so Day 3 already bites.
 - **Freshness (the twist):** a chopped or grilled ingredient stays fresh for
   25 seconds — a green ring drains around it as the seconds run out, then it
   goes stale. Serve a dish built only from fresh items for a **+$3 FRESH
